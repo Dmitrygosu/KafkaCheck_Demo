@@ -1,10 +1,21 @@
-syntax="proto3";
-package kafkaCheck;
-option go_package=".";
+// =============================================================================
+// Protocol Buffers определение для сообщений Kafka
+// =============================================================================
+// Используется для сериализации/десериализации сообщений
+// =============================================================================
 
+syntax = "proto3";
+package api
+option go_package = ".";
 
-message KafkaCheck{
-  string id=1;
-  string content=2;
-  int64 timestamp=3;
+// KafkaMessage - структура сообщения для передачи через Kafka
+message KafkaMessage {
+  // id - уникальный идентификатор сообщения
+  string id = 1;
+  
+  // content - содержимое сообщения
+  string content = 2;
+  
+  // timestamp - время создания сообщения (Unix timestamp)
+  int64 timestamp = 3;
 }

@@ -1,5 +1,68 @@
+# KafkaCheck Configuration
+
+logging:
+  level: INFO    # DEBUG - всё подряд, INFO - основное, WARN - предупреждения, ERROR - только ошибки
+  format: text   # text - читаемый, json - для систем мониторинга
 
 kafka:
   brokers:
     - localhost:9092
-  topic: test_topic
+    - localhost:9093
+    - localhost:9094
+  version: "3.6.0"
+
+  producer:
+    topic: "test_topic"
+    
+    # Гарантия доставки:
+    #   NoResponse   - не ждать подтверждения (быстро, ненадёжно)
+    #   WaitForLocal - ждать записи на лидера (баланс)
+    #   WaitForAll   - ждать записи на все реплики (надёжно, медленно)
+    required_acks: "WaitForAll"
+    
+    max_message_bytes: 1048576  # 1MB - максимальный размер одного сообщения
+    timeout: 10                 # секунд - таймаут ожидания ответа от брокера
+    
+    # Алгоритм сжатия:
+    #   none   - без сжатия (быстро, большой объём)
+    #   gzip   - хорошее сжатие, медленнее (для редких больших сообщений)
+    #   snappy - баланс скорости и сжатия (рекомендуется)
+    #   lz4    - быстрое сжатие (для высоких нагрузок)
+    #   zstd   - лучшее сжатие (для архивных данных)
+    compression: "snappy"
+    
+    flush_messages: 100   # отправлять пачками по N сообщений
+    flush_frequency: 100  # или каждые N мс (что раньше)
+    retry_max: 3          # количество повторных попыток при ошибке
+    retry_backoff: 100    # пауза между попытками, мс
+
+  consumer:
+    topics:
+      - "test_topic"
+    group_id: "kafkacheck-group"
+    
+    # Начальная позиция чтения:
+    #   oldest - читать с начала (все сообщения)
+    #   newest - только новые (пропустить старые)
+    initial_offset: "newest"
+    
+    auto_commit: true           # автоматически сохранять позицию чтения
+    auto_commit_interval: 1     # интервал сохранения, секунд
+    fetch_wait_max: 500         # макс. ожидание данных, мс
+    fetch_min: 1                # мин. размер ответа, байт
+    fetch_default: 1048576      # размер ответа по умолчанию, байт
+    session_timeout: 10         # таймаут сессии, секунд (брокер считает consumer мёртвым)
+    heartbeat_interval: 3       # интервал heartbeat, секунд (должен быть < session_timeout/3)
+    
+    # Стратегия распределения партиций:
+    #   range      - последовательное назначение (partition 0-2 -> consumer A, 3-5 -> consumer B)
+    #   roundrobin - равномерное чередование (0->A, 1->B, 2->A, 3->B)
+    #   sticky     - минимизирует перераспределение при ребалансировке (рекомендуется)
+    rebalance_strategy: "sticky"
+
+app:
+  messages_count: 10            # количество тестовых сообщений
+  send_interval: 500            # пауза между отправками, мс
+  shutdown_timeout: 30          # таймаут graceful shutdown, секунд
+  kafka_ready_timeout: 60       # сколько ждать готовности Kafka, секунд
+  kafka_ready_check_interval: 2 # интервал проверки готовности, секунд
