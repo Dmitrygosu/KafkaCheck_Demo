@@ -1,1 +1,1 @@
-# KafkaCheck_Demo
+Небольшая работа с kafkaui
