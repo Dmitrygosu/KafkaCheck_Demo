@@ -1,9 +1,9 @@
-.PHONY: all build run clean kafka-up kafka-down kafka-logs kafka-zk-up kafka-zk-down test help
+.PHONY: all build run clean kafka-up kafka-down kafka-reset kafka-logs kafka-status kafka-zk-up kafka-zk-down tidy fmt vet test proto help
 
 # Переменные
 BINARY_NAME=bin/kafkacheck
 GO=go
-DOCKER_COMPOSE=docker-compose
+DOCKER_COMPOSE=docker compose
 
 # Сборка
 all: build
@@ -56,7 +56,11 @@ vet:
 	$(GO) vet ./...
 
 test:
-	$(GO) test -v ./...
+	$(GO) test -race ./...
+
+# Requires protoc and protoc-gen-go (go install google.golang.org/protobuf/cmd/protoc-gen-go@latest).
+proto:
+	protoc --go_out=. --go_opt=paths=source_relative pkg/api/message.proto
 
 # Помощь
 help:
@@ -78,3 +82,4 @@ help:
 	@echo "  fmt          - Format code"
 	@echo "  vet          - Run go vet"
 	@echo "  test         - Run tests"
+	@echo "  proto        - Regenerate pkg/api from message.proto"

@@ -5,9 +5,9 @@ Package app содержит основную логику приложения.
 package app
 
 import (
-	"KafkaCheck/internal/config"
-	"KafkaCheck/internal/domain"
-	"KafkaCheck/internal/repository"
+	"github.com/Dmitrygosu/KafkaCheck_Demo/KafkaCheck/internal/config"
+	"github.com/Dmitrygosu/KafkaCheck_Demo/KafkaCheck/internal/domain"
+	"github.com/Dmitrygosu/KafkaCheck_Demo/KafkaCheck/internal/repository"
 	"context"
 	"fmt"
 	"log"

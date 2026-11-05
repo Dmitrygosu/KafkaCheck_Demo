@@ -1,9 +1,9 @@
 package repository
 
 import (
-	"KafkaCheck/internal/config"
-	"KafkaCheck/internal/domain"
-	"KafkaCheck/pkg/api"
+	"github.com/Dmitrygosu/KafkaCheck_Demo/KafkaCheck/internal/config"
+	"github.com/Dmitrygosu/KafkaCheck_Demo/KafkaCheck/internal/domain"
+	"github.com/Dmitrygosu/KafkaCheck_Demo/KafkaCheck/pkg/api"
 	"fmt"
 	"log"
 	"sync"

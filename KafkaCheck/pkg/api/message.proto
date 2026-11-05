@@ -1,21 +1,20 @@
-// =============================================================================
-// Protocol Buffers определение для сообщений Kafka
-// =============================================================================
-// Используется для сериализации/десериализации сообщений
-// =============================================================================
+// Wire format of the demo messages exchanged through Kafka.
+// Regenerate the Go code with `make proto`.
 
 syntax = "proto3";
-package api
-option go_package = ".";
 
-// KafkaMessage - структура сообщения для передачи через Kafka
+package api;
+
+option go_package = "github.com/Dmitrygosu/KafkaCheck_Demo/KafkaCheck/pkg/api;api";
+
+// KafkaMessage is a message produced to and consumed from the demo topic.
 message KafkaMessage {
-  // id - уникальный идентификатор сообщения
+  // id is the unique message id; it is also used as the Kafka key.
   string id = 1;
-  
-  // content - содержимое сообщения
+
+  // content is the message payload.
   string content = 2;
-  
-  // timestamp - время создания сообщения (Unix timestamp)
+
+  // timestamp is the creation time as a Unix timestamp in seconds.
   int64 timestamp = 3;
 }

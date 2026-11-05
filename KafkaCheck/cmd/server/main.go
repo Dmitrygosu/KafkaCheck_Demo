@@ -1,7 +1,7 @@
 package main
 
 import (
-	"KafkaCheck/internal/app"
+	"github.com/Dmitrygosu/KafkaCheck_Demo/KafkaCheck/internal/app"
 	"log"
 	"os"
 )

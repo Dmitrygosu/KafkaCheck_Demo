@@ -1,7 +1,7 @@
 package api
 
 import (
-	"KafkaCheck/internal/domain"
+	"github.com/Dmitrygosu/KafkaCheck_Demo/KafkaCheck/internal/domain"
 	"fmt"
 
 	"google.golang.org/protobuf/proto"
