@@ -85,6 +85,11 @@ make kafka-zk-up
 | `kafka.producer.compression` | Сжатие: `none`, `gzip`, `snappy`, `lz4`, `zstd` |
 | `kafka.consumer.initial_offset` | С какого сообщения читать: `oldest`, `newest` |
 | `kafka.consumer.rebalance_strategy` | Распределение партиций: `range`, `roundrobin`, `sticky` |
+| `kafka.version` | Версия протокола Kafka для Sarama |
+| `logging.level` / `logging.format` | Уровень (`DEBUG`…`ERROR`) и формат логов (`text`, `json`) |
+| `app.demo_duration` | Сколько секунд ждать сообщения после отправки (`0` — до Ctrl+C) |
+
+Другой файл конфигурации: `./bin/kafkacheck -config path/to/config.yaml`.
 
 ## Kafka UI
 
@@ -106,13 +111,23 @@ make kafka-up
 
 **Порты заняты:**
 ```bash
-netstat -ano | findstr "9092"
+lsof -i :9092        # Linux/macOS
+netstat -ano | findstr "9092"   # Windows
 docker ps
 ```
 
 **Consumer не получает сообщения:**
 - Проверь `initial_offset: oldest` в config.yaml
 - Убедись что топик существует в Kafka UI
+
+## Тесты
+
+```bash
+make test
+```
+
+Юнит-тесты не требуют Kafka: продюсер проверяется на моках Sarama, обработчик
+consumer group — на фейковой сессии.
 
 ## Документация
 
