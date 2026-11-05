@@ -1,10 +1,16 @@
+// Package config loads and validates config.yaml.
 package config
 
 import (
+	"errors"
 	"fmt"
+	"io"
+	"log/slog"
 	"os"
+	"strings"
 	"time"
 
+	"github.com/IBM/sarama"
 	"gopkg.in/yaml.v3"
 )
 
@@ -55,7 +61,7 @@ type ConsumerConfig struct {
 type AppConfig struct {
 	MessagesCount           int `yaml:"messages_count"`
 	SendInterval            int `yaml:"send_interval"`
-	ShutdownTimeout         int `yaml:"shutdown_timeout"`
+	DemoDuration            int `yaml:"demo_duration"`
 	KafkaReadyTimeout       int `yaml:"kafka_ready_timeout"`
 	KafkaReadyCheckInterval int `yaml:"kafka_ready_check_interval"`
 }
@@ -77,24 +83,66 @@ func Load(path string) (*Config, error) {
 	return &cfg, nil
 }
 
+// validate reports every problem at once.
 func (c *Config) validate() error {
+	var errs []error
 	if len(c.Kafka.Brokers) == 0 {
-		return fmt.Errorf("kafka.brokers is required")
+		errs = append(errs, errors.New("kafka.brokers is required"))
+	}
+	if _, err := c.Kafka.SaramaVersion(); err != nil {
+		errs = append(errs, err)
 	}
 	if c.Kafka.Producer.Topic == "" {
-		return fmt.Errorf("kafka.producer.topic is required")
+		errs = append(errs, errors.New("kafka.producer.topic is required"))
 	}
 	if len(c.Kafka.Consumer.Topics) == 0 {
-		return fmt.Errorf("kafka.consumer.topics is required")
+		errs = append(errs, errors.New("kafka.consumer.topics is required"))
 	}
 	if c.Kafka.Consumer.GroupID == "" {
-		return fmt.Errorf("kafka.consumer.group_id is required")
+		errs = append(errs, errors.New("kafka.consumer.group_id is required"))
 	}
-	return nil
+	if _, err := c.Logging.NewLogger(io.Discard); err != nil {
+		errs = append(errs, err)
+	}
+	if c.App.MessagesCount < 0 || c.App.DemoDuration < 0 {
+		errs = append(errs, errors.New("app.messages_count and app.demo_duration must not be negative"))
+	}
+	if c.App.KafkaReadyCheckInterval <= 0 {
+		errs = append(errs, errors.New("app.kafka_ready_check_interval must be positive"))
+	}
+	return errors.Join(errs...)
 }
 
-func (c *Config) GetShutdownTimeout() time.Duration {
-	return time.Duration(c.App.ShutdownTimeout) * time.Second
+// SaramaVersion parses kafka.version; an empty value means Sarama's default.
+func (k *KafkaConfig) SaramaVersion() (sarama.KafkaVersion, error) {
+	if k.Version == "" {
+		return sarama.DefaultVersion, nil
+	}
+	v, err := sarama.ParseKafkaVersion(k.Version)
+	if err != nil {
+		return sarama.KafkaVersion{}, fmt.Errorf("kafka.version: %w", err)
+	}
+	return v, nil
+}
+
+// NewLogger builds a structured logger from logging.level (DEBUG, INFO, WARN,
+// ERROR) and logging.format (text or json).
+func (l *LoggingConfig) NewLogger(w io.Writer) (*slog.Logger, error) {
+	var level slog.Level
+	if l.Level != "" {
+		if err := level.UnmarshalText([]byte(l.Level)); err != nil {
+			return nil, fmt.Errorf("logging.level: %w", err)
+		}
+	}
+	opts := &slog.HandlerOptions{Level: level}
+	switch strings.ToLower(l.Format) {
+	case "", "text":
+		return slog.New(slog.NewTextHandler(w, opts)), nil
+	case "json":
+		return slog.New(slog.NewJSONHandler(w, opts)), nil
+	default:
+		return nil, fmt.Errorf("logging.format: unknown format %q (want text or json)", l.Format)
+	}
 }
 
 func (c *Config) GetKafkaReadyTimeout() time.Duration {
@@ -109,8 +157,12 @@ func (c *Config) GetSendInterval() time.Duration {
 	return time.Duration(c.App.SendInterval) * time.Millisecond
 }
 
-/* GetDuration конвертирует число в time.Duration
-   unit: "ms" | "s" | "m" | "h" */
+// GetDemoDuration is how long the demo runs; zero means until interrupted.
+func (c *Config) GetDemoDuration() time.Duration {
+	return time.Duration(c.App.DemoDuration) * time.Second
+}
+
+// GetDuration converts a number to a time.Duration; unit is "ms", "s", "m" or "h".
 func GetDuration(value int, unit string) time.Duration {
 	switch unit {
 	case "ms":

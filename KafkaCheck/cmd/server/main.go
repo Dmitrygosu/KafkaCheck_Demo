@@ -1,14 +1,17 @@
 package main
 
 import (
-	"github.com/Dmitrygosu/KafkaCheck_Demo/KafkaCheck/internal/app"
+	"flag"
 	"log"
-	"os"
+
+	"github.com/Dmitrygosu/KafkaCheck_Demo/KafkaCheck/internal/app"
 )
 
 func main() {
-	if err := app.Run(); err != nil {
-		log.Printf("application error: %v", err)
-		os.Exit(1)
+	configPath := flag.String("config", "configs/config.yaml", "path to the configuration file")
+	flag.Parse()
+
+	if err := app.Run(*configPath); err != nil {
+		log.Fatalf("application error: %v", err)
 	}
 }

@@ -1,27 +1,33 @@
 package repository
 
 import (
-	"github.com/Dmitrygosu/KafkaCheck_Demo/KafkaCheck/internal/config"
-	"github.com/Dmitrygosu/KafkaCheck_Demo/KafkaCheck/internal/domain"
-	"github.com/Dmitrygosu/KafkaCheck_Demo/KafkaCheck/pkg/api"
 	"context"
 	"fmt"
-	"log"
+	"log/slog"
 	"sync"
 
 	"github.com/IBM/sarama"
+
+	"github.com/Dmitrygosu/KafkaCheck_Demo/KafkaCheck/internal/config"
+	"github.com/Dmitrygosu/KafkaCheck_Demo/KafkaCheck/internal/domain"
+	"github.com/Dmitrygosu/KafkaCheck_Demo/KafkaCheck/pkg/api"
 )
 
 type ConsumerRepository struct {
 	group   sarama.ConsumerGroup
 	topics  []string
 	handler *groupHandler
+	logger  *slog.Logger
 	closed  bool
 	mu      sync.RWMutex
 }
 
+// groupHandler marks every message after handling it, including messages
+// that fail to decode or whose callback fails: the demo favours progress
+// over redelivery (at-most-once for failed messages).
 type groupHandler struct {
 	callback  func(*domain.Message) error
+	logger    *slog.Logger
 	processed int64
 	errors    int64
 	mu        sync.Mutex
@@ -50,7 +56,7 @@ func (h *groupHandler) processMessage(session sarama.ConsumerGroupSession, msg *
 		h.mu.Lock()
 		h.errors++
 		h.mu.Unlock()
-		log.Printf("[consumer] deserialize error: %v", err)
+		h.logger.Error("cannot decode message", "offset", msg.Offset, "error", err)
 		session.MarkMessage(msg, "")
 		return
 	}
@@ -60,7 +66,7 @@ func (h *groupHandler) processMessage(session sarama.ConsumerGroupSession, msg *
 			h.mu.Lock()
 			h.errors++
 			h.mu.Unlock()
-			log.Printf("[consumer] callback error: %v", err)
+			h.logger.Error("message handler failed", "offset", msg.Offset, "error", err)
 		} else {
 			h.mu.Lock()
 			h.processed++
@@ -70,8 +76,10 @@ func (h *groupHandler) processMessage(session sarama.ConsumerGroupSession, msg *
 	session.MarkMessage(msg, "")
 }
 
-func NewConsumerRepository(brokers []string, cfg *config.ConsumerConfig) (*ConsumerRepository, error) {
+func NewConsumerRepository(brokers []string, version sarama.KafkaVersion, cfg *config.ConsumerConfig,
+	logger *slog.Logger) (*ConsumerRepository, error) {
 	saramaCfg := sarama.NewConfig()
+	saramaCfg.Version = version
 
 	switch cfg.InitialOffset {
 	case "oldest":
@@ -107,7 +115,7 @@ func NewConsumerRepository(brokers []string, cfg *config.ConsumerConfig) (*Consu
 		return nil, fmt.Errorf("create consumer group: %w", err)
 	}
 
-	return &ConsumerRepository{group: group, topics: cfg.Topics, handler: &groupHandler{}}, nil
+	return &ConsumerRepository{group: group, topics: cfg.Topics, handler: &groupHandler{logger: logger}, logger: logger}, nil
 }
 
 func (c *ConsumerRepository) ConsumeMessages(ctx context.Context, callback func(*domain.Message) error) error {
@@ -122,7 +130,7 @@ func (c *ConsumerRepository) ConsumeMessages(ctx context.Context, callback func(
 
 	go func() {
 		for err := range c.group.Errors() {
-			log.Printf("[consumer] group error: %v", err)
+			c.logger.Error("consumer group error", "error", err)
 		}
 	}()
 

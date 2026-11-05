@@ -63,6 +63,6 @@ kafka:
 app:
   messages_count: 10            # количество тестовых сообщений
   send_interval: 500            # пауза между отправками, мс
-  shutdown_timeout: 30          # таймаут graceful shutdown, секунд
+  demo_duration: 15             # сколько работать после отправки, секунд (0 - до Ctrl+C)
   kafka_ready_timeout: 60       # сколько ждать готовности Kafka, секунд
   kafka_ready_check_interval: 2 # интервал проверки готовности, секунд
