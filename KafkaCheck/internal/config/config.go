@@ -51,8 +51,8 @@ type ConsumerConfig struct {
 	AutoCommit         bool     `yaml:"auto_commit"`
 	AutoCommitInterval int      `yaml:"auto_commit_interval"`
 	FetchWaitMax       int      `yaml:"fetch_wait_max"`
-	FetchMin           int      `yaml:"fetch_min"`
-	FetchDefault       int      `yaml:"fetch_default"`
+	FetchMin           int32    `yaml:"fetch_min"`
+	FetchDefault       int32    `yaml:"fetch_default"`
 	SessionTimeout     int      `yaml:"session_timeout"`
 	HeartbeatInterval  int      `yaml:"heartbeat_interval"`
 	RebalanceStrategy  string   `yaml:"rebalance_strategy"`
@@ -67,7 +67,7 @@ type AppConfig struct {
 }
 
 func Load(path string) (*Config, error) {
-	data, err := os.ReadFile(path)
+	data, err := os.ReadFile(path) //nolint:gosec // the path is chosen by the operator via the -config flag
 	if err != nil {
 		return nil, fmt.Errorf("read config: %w", err)
 	}

@@ -23,7 +23,7 @@ type ConsumerRepository struct {
 }
 
 // groupHandler marks every message after handling it, including messages
-// that fail to decode or whose callback fails: the demo favours progress
+// that fail to decode or whose callback fails: the demo favors progress
 // over redelivery (at-most-once for failed messages).
 type groupHandler struct {
 	callback  func(*domain.Message) error
@@ -94,8 +94,8 @@ func NewConsumerRepository(brokers []string, version sarama.KafkaVersion, cfg *c
 	}
 
 	saramaCfg.Consumer.MaxWaitTime = config.GetDuration(cfg.FetchWaitMax, "ms")
-	saramaCfg.Consumer.Fetch.Min = int32(cfg.FetchMin)
-	saramaCfg.Consumer.Fetch.Default = int32(cfg.FetchDefault)
+	saramaCfg.Consumer.Fetch.Min = cfg.FetchMin
+	saramaCfg.Consumer.Fetch.Default = cfg.FetchDefault
 	saramaCfg.Consumer.Group.Session.Timeout = config.GetDuration(cfg.SessionTimeout, "s")
 	saramaCfg.Consumer.Group.Heartbeat.Interval = config.GetDuration(cfg.HeartbeatInterval, "s")
 
