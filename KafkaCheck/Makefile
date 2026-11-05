@@ -1,7 +1,7 @@
 .PHONY: all build run clean kafka-up kafka-down kafka-logs kafka-zk-up kafka-zk-down test help
 
 # Переменные
-BINARY_NAME=kafkacheck
+BINARY_NAME=bin/kafkacheck
 GO=go
 DOCKER_COMPOSE=docker-compose
 
@@ -15,7 +15,7 @@ run: build
 	./$(BINARY_NAME)
 
 clean:
-	rm -f $(BINARY_NAME)
+	rm -rf bin
 	$(GO) clean
 
 # Kafka (KRaft режим - рекомендуется)

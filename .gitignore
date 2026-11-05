@@ -1,0 +1,12 @@
+# Build output
+/KafkaCheck/kafkacheck
+/KafkaCheck/bin/
+*.exe
+*.test
+coverage.out
+
+# IDE and OS files
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
